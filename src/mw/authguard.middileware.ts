@@ -34,6 +34,13 @@ export async function authGuardMiddleware(
     res.locals["userId"] = user.id;
     res.locals["namespace"] = user.namespace;
     res.locals["sessionId"] = sessionId;
+
+    logger.info("✅ User authenticated successfully", {
+      userId: user.id,
+      email: user.email,
+      namespace: user.namespace,      
+    });
+    
     return next();
 
   } catch (err: any) {

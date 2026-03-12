@@ -9,6 +9,9 @@ import router from "./router.js";
 import { getDb } from "./database.js";
 import { getRedisClient } from "./redis.js";
 import { authGuardMiddleware } from "./mw/authguard.middileware.js";
+import logoutHandler from "./handlers/logoutHandler.js";
+import loginHandler from "./handlers/loginHandler.js";
+import setSessionCookieHandler from "./handlers/setSessionCookie.handler.js";
 
 const app = express();
 app.use(
@@ -24,9 +27,13 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.get('/api/auth/callback/google', loginHandler);
+app.post('/api/auth/set-cookie', setSessionCookieHandler);
+
+
+
 //Auth Service routes
 app.use("/api", authGuardMiddleware, router);
-
 
 // Global error handler middleware
 app.use(

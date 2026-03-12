@@ -12,7 +12,6 @@ export default async function loginHandler(req: Request, res: Response) {
         if (!code || !state) {
             return res.status(400).json({ error: true, message: "Code or state missing in query parameters" });
         }
-
         const claims = await authService.exchangeToken(code as string);
         const userId = idGeneratorService.generateIdFromEmail(claims.email);
 

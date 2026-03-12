@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { logger } from "./utils/logger.js";
-import { GoogleAuth } from "./auth/googleAuth.js";
 import loginHandler from "./handlers/loginHandler.js";
 import setSessionCookieHandler from "./handlers/setSessionCookie.handler.js";
 import { getDb } from "./database.js";
+import getMeHandler from "./handlers/getMeHandler.js";
+import logoutHandler from "./handlers/logoutHandler.js";
 
 const router = Router();
 
@@ -14,9 +14,11 @@ router.get("/health", async (req, res) => {
 });
 
 
-router.get('/auth/callback/google', loginHandler);
 
-router.post('/auth/set-cookie', setSessionCookieHandler);
+
+router.get('/me', getMeHandler);
+router.post('/logout', logoutHandler);
+
 
 
 export default router;
