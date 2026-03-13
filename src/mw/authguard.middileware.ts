@@ -9,9 +9,9 @@ export async function authGuardMiddleware(
 ) {
   try {
     // Check for session cookie first
-    const sessionId = req.cookies?.session_id;
+    const sessionKey = req.cookies?.session_id;
     
-    if (!sessionId) {
+    if (!sessionKey) {
       return res.status(401).json({
         error: true,
         message: "Authentication required. Please log in.",
@@ -20,7 +20,7 @@ export async function authGuardMiddleware(
 
     // Verify session from Redis
     const redisClient = await getRedisClient();
-    const sessionData = await redisClient.get(sessionId);
+    const sessionData = await redisClient.get(sessionKey);
     
     if (!sessionData) {
       return res.status(401).json({
@@ -33,12 +33,13 @@ export async function authGuardMiddleware(
     res.locals["email"] = user.email;
     res.locals["userId"] = user.id;
     res.locals["namespace"] = user.namespace;
-    res.locals["sessionId"] = sessionId;
+    res.locals["sessionKey"] = sessionKey;
 
     logger.info("✅ User authenticated successfully", {
       userId: user.id,
       email: user.email,
-      namespace: user.namespace,      
+      namespace: user.namespace,
+      sessionKey: sessionKey,
     });
     
     return next();

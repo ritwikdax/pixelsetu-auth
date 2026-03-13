@@ -5,6 +5,7 @@ import { EventEmitter } from 'events';
 export const APP_EVENTS = {
     LOGIN_FAILED: 'login:failed',
     SEND_ORG_INVITE: 'org:invite',
+    SEND_WELCOME_EMAIL: 'welcome:email'
 } as const;
 
 

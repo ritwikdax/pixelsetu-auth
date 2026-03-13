@@ -4,13 +4,13 @@ interface AuthContext{
     email: string;
     userId: string;
     namespace: string;
-    sessionId: string;    
+    sessionKey: string;    
 }
 export function getAuthContext(res: Response){
     return {
         email: res.locals["email"],
         userId: res.locals["userId"],
         namespace: res.locals["namespace"],
-        sessionId: res.locals["sessionId"],
+        sessionKey: res.locals["sessionKey"],
     } as AuthContext;
 }

@@ -1,5 +1,8 @@
 export const COLLECTIONS = {
   USERS : "users",
+  ORGS: "orgs",
+  MEMBERSHIPS: "memberships",
+  
 } as const;
 
 

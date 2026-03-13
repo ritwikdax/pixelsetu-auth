@@ -135,3 +135,7 @@ async function connectMongo(): Promise<Db> {
 export async function getDb(): Promise<Db> {
   return await connectMongo();
 }
+
+export async function getDbClient(){
+  return await client.connect();
+}

@@ -1,39 +1,78 @@
-import { getDb } from "../database.js";
+import { COLLECTIONS } from "../const.js";
+import { getDb, getDbClient } from "../database.js";
 import { User } from "../interface.js";
+import { idGeneratorService } from "./idGenerator.service.js";
+
+
+interface UserOnboardData {
+    email: string;
+    firstName: string;
+    lastName: string;
+    avatarUrl: string;
+    isVerified: boolean;
+}
 
 class UserManagementService {
 
-    private readonly COLLECTION_NAME = "users";
+    private readonly DEFAULT_APPLICATION_POOL = ["home", "split"];
 
-
-    async registerUser(userData: any) {
-        // Implement user registration logic here
-        // This could involve validating the input, hashing passwords, and storing user data in a database
-    }
-
-    async loginUser(credentials: any) {
-        // Implement user login logic here
-        // This could involve validating credentials, generating JWT tokens, etc.
-    }
-
-    async getUserProfile(id: string) {
-        // Implement logic to retrieve user profile information here
-    }
-
-    async find(id: string) {
+    async findByEmail(email: string) {
         const db = await getDb();
-        return await db.collection(this.COLLECTION_NAME).findOne<User>({ id });
+        return await db.collection(COLLECTIONS.USERS).findOne<User>({ id: idGeneratorService.getUserId(email) });
     }
 
-    async createNewUser(userData: User) {
+    async getFullUserContext(email: string){
+        const user = await this.findByEmail(email);
+    }
+
+
+    //Onboard New User
+    async onboardNewUser(userData: UserOnboardData) {
+        const now = new Date();
         const db = await getDb();
-        await db.collection(this.COLLECTION_NAME).insertOne(userData);
+        const client = await getDbClient();
+        const session = client.startSession();
+        
+        try {
+            session.startTransaction();
+
+            await db.collection(COLLECTIONS.USERS).insertOne({
+                id: idGeneratorService.getUserId(userData.email),
+                email: userData.email,
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+                isVerified: userData.isVerified,
+                avatarUrl: userData.avatarUrl,
+                applicationPool: this.DEFAULT_APPLICATION_POOL,
+                createdAt: now,
+                updatedAt: now
+            }, { session });
+
+
+            await db.collection(COLLECTIONS.ORGS).insertOne({
+                id: idGeneratorService.getDefaultOrgIdOfUser(userData.email),
+                owner: userData.email,
+                role: "owner",
+                displayName: `${userData.firstName}'s Company`,
+                namespace: idGeneratorService.getNamespaceFromEmail(userData.email),
+                namespaceId: idGeneratorService.getDefaultNamespaceIdOfUser(userData.email),
+                createdAt: now,
+                updatedAt: now
+            }, { session });
+
+            await session.commitTransaction();
+        } catch (error) {
+            await session.abortTransaction();
+            throw error;
+        } finally {
+            session.endSession();
+        }
     }
 
     async addApplication(userId: string, appId: string) {
         // Implement logic to add an application to the user's profile
         const db = await getDb();
-        await db.collection(this.COLLECTION_NAME).updateOne(
+        await db.collection(COLLECTIONS.USERS).updateOne(
             { id: userId },
             { $addToSet: { applicationPool: appId } }
         );
@@ -41,7 +80,7 @@ class UserManagementService {
 
     async removeApplication(userId: string, appId: string) {
         const db = await getDb();
-        await db.collection<User>(this.COLLECTION_NAME).updateOne(
+        await db.collection<User>(COLLECTIONS.USERS).updateOne(
             { id: userId },
             { $pull: { applicationPool: appId } }
         );

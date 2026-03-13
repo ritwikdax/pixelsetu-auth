@@ -9,9 +9,9 @@ import router from "./router.js";
 import { getDb } from "./database.js";
 import { getRedisClient } from "./redis.js";
 import { authGuardMiddleware } from "./mw/authguard.middileware.js";
-import logoutHandler from "./handlers/logoutHandler.js";
 import loginHandler from "./handlers/loginHandler.js";
 import setSessionCookieHandler from "./handlers/setSessionCookie.handler.js";
+import acceptInviteHandler from "./handlers/acceptInviteHandler.js";
 
 const app = express();
 app.use(
@@ -27,9 +27,11 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
+//Public UnAuthenticated API Routes
 app.get('/api/auth/callback/google', loginHandler);
 app.post('/api/auth/set-cookie', setSessionCookieHandler);
-
+app.get('/api/accept-invite', acceptInviteHandler);
 
 
 //Auth Service routes
@@ -89,6 +91,7 @@ async function preStartSetup() {
   //Prestart
   const listener = new Listener();
   listener.listenOrgInvite();
+  listener.listenWelcomeUserEvent();
 
   await getRedisClient();
   logger.info("✅ Redis connection successful");
