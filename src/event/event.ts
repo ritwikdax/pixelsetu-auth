@@ -4,7 +4,7 @@ import { EventEmitter } from 'events';
 // Event names constants
 export const APP_EVENTS = {
     LOGIN_FAILED: 'login:failed',
-    SELECTION_SUBMITTED: 'selection:submitted',
+    SEND_ORG_INVITE: 'org:invite',
 } as const;
 
 

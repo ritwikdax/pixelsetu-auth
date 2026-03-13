@@ -22,6 +22,5 @@ export default async function logoutHandler(req: Request, res: Response){
     } catch (err: any) {
         logger.error("Error in logoutHandler:", err);
         res.status(500).json({ error: "Internal Server Error" });
-    }   
-
+    }
 }

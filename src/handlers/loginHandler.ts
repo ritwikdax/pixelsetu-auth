@@ -5,6 +5,8 @@ import { userService } from "../services/user.service.js";
 import { idGeneratorService } from "../services/idGenerator.service.js";
 import { getRedisClient } from "../redis.js";
 
+const DEFAULT_APPLICATION_POOL = ["home", "split"];
+
 export default async function loginHandler(req: Request, res: Response) {
     try {
         const now = new Date();
@@ -43,6 +45,7 @@ export default async function loginHandler(req: Request, res: Response) {
                 isOrgOwner: true,
                 createdAt: now,
                 updatedAt: now,
+                applicationPool: DEFAULT_APPLICATION_POOL
             });
 
             const redirectUrl = process.env.NODE_ENV === "production"

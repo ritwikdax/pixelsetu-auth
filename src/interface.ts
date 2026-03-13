@@ -34,6 +34,9 @@ export interface User extends Entity {
   website?: string;
   logoUrl?: string;
   logoUrlDark?: string; // For dark mode
+
+  //App config level
+  applicationPool?: Array<string>;
 }
 
 

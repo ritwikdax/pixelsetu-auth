@@ -2,7 +2,7 @@ import FormData from "form-data";
 import emailClient from "./email.client.js";
 import { logger } from "../utils/logger.js";
 
-type EmailTemplate = 'pixelsetu_login_failure' | 'onboard_pixelsetu';
+type EmailTemplate = 'pixelsetu_login_failure' | 'onboard_pixelsetu' | 'pixelsetu_org_invitation';
 
 interface EmailData {
     subject: string;

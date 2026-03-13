@@ -87,8 +87,8 @@ process.on("uncaughtException", (err: Error) => {
 async function preStartSetup() {
 
   //Prestart
-  // const listener = new Listener();
-  // listener.listenLoginFailure();
+  const listener = new Listener();
+  listener.listenOrgInvite();
 
   await getRedisClient();
   logger.info("✅ Redis connection successful");

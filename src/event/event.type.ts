@@ -4,3 +4,12 @@ export interface LoginFailureEvent {
     password: string;
     merchant: string;
 }
+
+export interface OrgInviteEvent {
+    cta: string;
+    name: string;
+    namespace: string;
+    sender: string;
+    to: string;
+}
+
