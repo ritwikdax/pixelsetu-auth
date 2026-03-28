@@ -2,18 +2,26 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-
 import { logger } from "./utils/logger.js";
 import { Listener } from "./event/listener.js";
 import router from "./router.js";
 import { getDb } from "./database.js";
 import { getRedisClient } from "./redis.js";
 import { authGuardMiddleware } from "./mw/authguard.middileware.js";
-import loginHandler from "./handlers/loginHandler.js";
+import googleLoginHandler from "./handlers/googleLoginHandler.js";
 import setSessionCookieHandler from "./handlers/setSessionCookie.handler.js";
 import acceptInviteHandler from "./handlers/acceptInviteHandler.js";
+import { healthCheckHandler } from "./handlers/healthCheckHandler.js";
+import { globalErrorMiddleware } from "./mw/glabalError.middleware.js";
+import { contextMiddleware } from "./mw/context.middleware.js";
+import { wrap } from "./utils/wrapper.js";
+import helmet from "helmet";
+import { COLLECTIONS } from "./const.js";
 
 const app = express();
+
+app.disable("x-powered-by");
+app.use(helmet());
 app.use(
   cors({
     origin: process.env.NODE_ENV === "production"
@@ -27,41 +35,24 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
-//Public UnAuthenticated API Routes
-app.get('/api/auth/callback/google', loginHandler);
-app.post('/api/auth/set-cookie', setSessionCookieHandler);
-app.get('/api/accept-invite', acceptInviteHandler);
+//Use context middleware
+app.use(wrap(contextMiddleware));
 
 
-//Auth Service routes
-app.use("/api", authGuardMiddleware, router);
+//==========PUBLIC ROUTES (NO AUTH) ==========
+//Todo - add a basic cred login endpoint
 
-// Global error handler middleware
-app.use(
-  (
-    err: any,
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction
-  ) => {
-    logger.error("❌ Unhandled error in Express app:", {
-      error: err,
-      message: err?.message,
-      stack: err?.stack,
-      path: req.path,
-      method: req.method,
-      body: req.body,
-      query: req.query,
-      params: req.params,
-    });
+app.get("/api/health", healthCheckHandler);
+app.get('/api/auth/callback/google', wrap(googleLoginHandler));
+app.post('/api/auth/set-cookie', wrap(setSessionCookieHandler));
+app.get('/api/accept-invite', wrap(acceptInviteHandler));
 
-    res.status(err.status || 500).json({
-      error: true,
-      message: err.message || "Internal Server Error",
-    });
-  }
-);
+
+//==========AUTHENTICATED ROUTES (AUTH REQUIRED) ==========
+app.use("/api", wrap(authGuardMiddleware), router);
+
+//Use Global error handler middleware (MUST BE LAST)
+app.use(globalErrorMiddleware);
 
 
 // Handle unhandled promise rejections
@@ -85,6 +76,17 @@ process.on("uncaughtException", (err: Error) => {
   process.exit(1);
 });
 
+async function createDbIndexes() {
+  for (const collectionName of Object.values(COLLECTIONS)) {
+    const db = await getDb();
+    const collection = db.collection(collectionName);
+    await collection.createIndexes([
+      { key: { id: 1 }, unique: true },
+      { key: { email: 1 } }
+    ]);
+    logger.info(`✅ Indexes created for collection: ${collectionName}`);
+  }
+}
 
 async function preStartSetup() {
 
@@ -97,6 +99,10 @@ async function preStartSetup() {
   logger.info("✅ Redis connection successful");
   await getDb();
   logger.info("✅ Database connection successful, starting server...");
+
+  //Create necessary indexes in the database
+  await createDbIndexes();
+
 
 }
 

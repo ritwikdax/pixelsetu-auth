@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { logger } from "../utils/logger.js";
-import { getRedisClient } from "../redis.js";
+import { sessionManager } from "../services/session.servcie.js";
 
 export default async function setSessionCookieHandler(req: Request, res: Response) {
     try {
@@ -11,8 +11,7 @@ export default async function setSessionCookieHandler(req: Request, res: Respons
         }
 
         // Verify the session exists in Redis
-        const redisClient = await getRedisClient();
-        const sessionData = await redisClient.get(sessionId);
+        const sessionData = await sessionManager.getSessionData(sessionId);
         
         if (!sessionData) {
             return res.status(401).json({ error: true, message: "Invalid or expired session" });
@@ -32,7 +31,7 @@ export default async function setSessionCookieHandler(req: Request, res: Respons
         return res.status(200).json({ 
             success: true, 
             message: "Cookie set successfully",
-            user: JSON.parse(sessionData)
+            user: sessionData
         });
 
     } catch (err) {

@@ -1,0 +1,60 @@
+name: Build and Push to GCP Container Registry
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: us-central1
+  IMAGE_NAME: photon-backend
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker to use gcloud as credential helper
+        run: |
+          gcloud auth configure-docker gcr.io
+
+      - name: Build Docker image
+        run: |
+          docker build -t gcr.io/$PROJECT_ID/$IMAGE_NAME:$GITHUB_SHA \
+                       -t gcr.io/$PROJECT_ID/$IMAGE_NAME:latest .
+
+      - name: Push Docker image to GCR
+        run: |
+          docker push gcr.io/$PROJECT_ID/$IMAGE_NAME:$GITHUB_SHA
+          docker push gcr.io/$PROJECT_ID/$IMAGE_NAME:latest
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ secrets.GCP_CLOUD_RUN_SERVICE_NAME }} \
+            --image gcr.io/$PROJECT_ID/$IMAGE_NAME:latest \
+            --region ${{ secrets.GCP_REGION }} \
+            --platform managed
+
+      - name: Output image details
+        run: |
+          echo "Image pushed to: gcr.io/$PROJECT_ID/$IMAGE_NAME:$GITHUB_SHA"
+          echo "Latest tag: gcr.io/$PROJECT_ID/$IMAGE_NAME:latest"

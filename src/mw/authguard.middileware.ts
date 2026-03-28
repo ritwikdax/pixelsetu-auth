@@ -1,59 +1,30 @@
 import { NextFunction, Request, Response } from "express";
 import { logger } from "../utils/logger.js";
-import { getRedisClient } from "../redis.js";
+import { sessionManager } from "../services/session.servcie.js";
+import { context } from "../utils/context.js";
+import { HttpError } from "../error/http.error.js";
 
 export async function authGuardMiddleware(
   req: Request,
   res: Response,
   next: NextFunction
 ) {
-  try {
-    // Check for session cookie first
-    const sessionKey = req.cookies?.session_id;
-    
-    if (!sessionKey) {
-      return res.status(401).json({
-        error: true,
-        message: "Authentication required. Please log in.",
-      });
-    }
 
-    // Verify session from Redis
-    const redisClient = await getRedisClient();
-    const sessionData = await redisClient.get(sessionKey);
-    
-    if (!sessionData) {
-      return res.status(401).json({
-        error: true,
-        message: "Session expired or invalid. Please log in again.",
-      });
-    }
-
-    const user = JSON.parse(sessionData);
-    res.locals["email"] = user.email;
-    res.locals["userId"] = user.id;
-    res.locals["namespace"] = user.namespace;
-    res.locals["sessionKey"] = sessionKey;
-
-    logger.info("✅ User authenticated successfully", {
-      userId: user.id,
-      email: user.email,
-      namespace: user.namespace,
-      sessionKey: sessionKey,
-    });
-    
-    return next();
-
-  } catch (err: any) {
-    logger.error("❌ Error in authGuardMiddleware:", {
-      error: err,
-      message: err?.message,
-      stack: err?.stack,
-      hasAuthHeader: !!req.headers["authorization"],
-      hasSessionCookie: !!req.cookies?.session_id,
-    });
-    return res
-      .status(401)
-      .json({ error: true, message: "User not logged in or invalid token" });
+  const sessionKey = req.cookies?.session_id;
+  if (!sessionKey) {
+    throw new HttpError("Authentication required. Please log in.", 401);
   }
+  const sessionData = await sessionManager.getSessionData(sessionKey);
+  if (!sessionData) {
+    throw new HttpError("Invalid or expired session. Please log in again.", 401);
+  }
+
+  context.set("email", sessionData.email);
+  context.set("activeOrgId", sessionData.activeOrgId);
+  context.set("activeRole", sessionData.activeRole);
+  context.set("userId", sessionData.userId);
+  context.set("sessionKey", sessionData.sessionKey);
+  
+  logger.info("✅ User authenticated successfully", { email: sessionData.email, activeOrgId: sessionData.activeOrgId, activeRole: sessionData.activeRole });
+  return next();
 }

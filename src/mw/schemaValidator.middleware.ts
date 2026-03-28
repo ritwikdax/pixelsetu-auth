@@ -1,4 +1,5 @@
 import { ZodSchema } from "zod";
+import { HttpError } from "../error/http.error.js";
 
 export function validateSchema<T>(schema: ZodSchema<T>) {
     return (req: any, res: any, next: any) => {
@@ -6,7 +7,7 @@ export function validateSchema<T>(schema: ZodSchema<T>) {
             schema.parse(req.body);
             next();
         } catch (err: any) {
-            return res.status(400).json({ error: err.errors });
+            throw new HttpError("Schema validation error", 400);
         }
     };
 

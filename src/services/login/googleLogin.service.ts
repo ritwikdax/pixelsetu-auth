@@ -1,23 +1,25 @@
-import { GoogleTokenClaims } from "../interface.js";
-import { env } from "../utils/env.js";
-import { http } from "../utils/http.js";
+import { Request } from "express";
+import { HttpError } from "../../error/http.error.js";
+import { env } from "../../utils/env.js";
+import { http } from "../../utils/http.js";
 import jwt from "jsonwebtoken";
+import { LoginService } from "./login.service.js";
+import { GoogleTokenClaims, StandardClaims } from "../../types/other.type.js";
 
 
-export class GoogleAuth {
-
+class GoogleLoginService extends LoginService {
     private readonly GOOGLE_CLIENT_ID: string;
     private readonly GOOGLE_SECRET: string;
     private readonly REDIRECT_URI: string = "http://localhost:3005/api/auth/callback/google";
     private readonly GRANT_TYPE: string = "authorization_code";
 
-
     constructor() {
+        super();
         this.GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID");
         this.GOOGLE_SECRET = env("GOOGLE_CLIENT_SECRET");
     }
 
-    async exchangeToken(code: string) {
+    private async exchangeToken(code: string) {
 
         try {
             const { data } = await http.post("https://oauth2.googleapis.com/token", {
@@ -47,5 +49,24 @@ export class GoogleAuth {
         }
     }
 
+    async login(request: Request): Promise<StandardClaims> {
 
+        const { code, state } = request.query;
+        if (!code || !state) {
+            throw new HttpError("Code or state missing in query parameters", 400);
+        }
+
+        const claims = await this.exchangeToken(code as string);
+        return {
+            email: claims.email,
+            firstName: claims.given_name,
+            lastName: claims.family_name,
+            isVerified: claims.email_verified,
+            avatarUrl: claims.picture,
+            provider: "google",
+            providerGivenId: claims.sub
+        } satisfies StandardClaims;
+    }
 }
+
+export const googleLoginService = new GoogleLoginService();

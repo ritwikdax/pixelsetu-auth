@@ -1,0 +1,41 @@
+{
+  // Exclude files from VS Code file watcher to improve performance
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/build/**": true
+  },
+  
+  // Exclude files from VS Code search to improve performance
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.git": true
+  },
+  
+  // Exclude files from file explorer
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": false, // Keep visible but don't watch
+    "**/dist": false
+  },
+  
+  // TypeScript performance settings
+  "typescript.tsserver.maxTsServerMemory": 4096,
+  "typescript.disableAutomaticTypeAcquisition": false,
+  "typescript.tsserver.watchOptions": {
+    "excludeDirectories": ["node_modules", "dist", "build"]
+  },
+  
+  // Enable editor optimizations
+  "editor.codeLens": false, // Disable CodeLens for better performance
+  "editor.suggest.showStatusBar": true,
+  "editor.suggest.preview": true,
+  
+  // Limit number of watchers
+  "files.maxMemory": 4096
+}
