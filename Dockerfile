@@ -30,10 +30,6 @@ RUN npm install --production
 COPY --from=builder /app/dist ./dist
 
 
-ENV NEW_RELIC_NO_CONFIG_FILE=true
-ENV NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true
-ENV NEW_RELIC_LOG=stdout
-ENV NODE_OPTIONS="--require=newrelic"
 ENV NODE_ENV=production
 
 # Expose the application port
