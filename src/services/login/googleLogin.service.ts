@@ -10,12 +10,13 @@ import { GoogleTokenClaims, StandardClaims } from "../../types/other.type.js";
 class GoogleLoginService extends LoginService {
     private readonly GOOGLE_CLIENT_ID: string;
     private readonly GOOGLE_SECRET: string;
-    private readonly REDIRECT_URI: string = "http://localhost:3005/api/auth/callback/google";
+    private readonly REDIRECT_URI: string;
     private readonly GRANT_TYPE: string = "authorization_code";
 
     constructor() {
         super();
         this.GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID");
+        this.REDIRECT_URI = env("GOOGLE_REDIRECT_URI");
         this.GOOGLE_SECRET = env("GOOGLE_CLIENT_SECRET");
     }
 
