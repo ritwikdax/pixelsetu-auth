@@ -101,7 +101,7 @@ class SessionManagementService {
         const sessionKeys = await redisClient.sMembers(userSessionStoreId);
 
         if (sessionKeys.length === 0) {
-            throw new HttpError("No active sessions found for the user", 404);
+            return;
         }
 
         for (const key of sessionKeys) {

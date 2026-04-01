@@ -9,7 +9,7 @@ class JWTService {
     }
 
     sign(payload: Record<string, any>): string {
-        return jwt.sign(payload, this.JWT_SECRET, { algorithm: 'HS256', expiresIn: '7d' });
+        return jwt.sign({...payload, iss: 'pixelsetu'}, this.JWT_SECRET, { algorithm: 'HS256', expiresIn: '7d' });
     }
 
     verify<TClaims>(token: string, options?: jwt.VerifyOptions){

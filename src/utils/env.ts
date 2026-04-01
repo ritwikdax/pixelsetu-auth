@@ -17,7 +17,7 @@ export const ENV_VARIABLES = {
   GOOGLE_CLIENT_SECRET: "GOOGLE_CLIENT_SECRET",
   PIXELSETU_SECRET_SALT: "PIXELSETU_SECRET_SALT",
   SECRET_ENCRYPTION_KEY: "SECRET_ENCRYPTION_KEY",
-  HOST: "HOST"
+  HOST: "HOST" //API Hosted BASE URL, e.g. https://auth.pixelsetu.com
 } as const;
 
 export function env(variableName: keyof typeof ENV_VARIABLES) {

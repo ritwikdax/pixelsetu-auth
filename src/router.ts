@@ -2,7 +2,7 @@ import { Router } from "express";
 import getMeHandler from "./handlers/getMeHandler.js";
 import logoutHandler from "./handlers/logoutHandler.js";
 import { validateSchema } from "./mw/schemaValidator.middleware.js";
-import { inviteUserToOrgSchema, removeOrgMemberSchema, sessionLogoutSchema, switchActiveOrgSchema } from "./schema/schema.js";
+import { businessFormDataSchema, checkNamespaceAvailabilitySchema, inviteUserToOrgSchema, removeOrgMemberSchema, sessionLogoutSchema, switchActiveOrgSchema } from "./schema/schema.js";
 import inviteUserToOrgHandler from "./handlers/inviteUserToOrgHandler.js";
 import removeAppHandler from "./handlers/removeAppHandler.js";
 import addAppHandler from "./handlers/addAppHandler.js";
@@ -14,6 +14,8 @@ import { wrap } from "./utils/wrapper.js";
 import leaveOrgHandler from "./handlers/leaveOrgHandler.js";
 import removeOrgMemberHandler from "./handlers/removeOrgMemberHandler.js";
 import { rbacMiddleware } from "./mw/rbac.middleware.js";
+import checkNamespaceAvailabilityHandler from "./handlers/checkNamespaceAvailabilityHandler.js";
+import { updateOrgHandler } from "./handlers/updateOrgHandler.js";
 
 
 const router = Router();
@@ -40,8 +42,10 @@ router.delete('/me/app/:appId', wrap(removeAppHandler));
 
 router.get('/org', wrap(getMyOrgHandler));
 router.get('/org/members', wrap(getAllMembersOfOrgHandler));
-router.put('/org/member', validateSchema(removeOrgMemberSchema), wrap(removeOrgMemberHandler));
+router.delete('/org/member/:userId', wrap(removeOrgMemberHandler));
 router.post('/org/invite', validateSchema(inviteUserToOrgSchema), wrap(inviteUserToOrgHandler));
+router.post('/org/check-namespace', validateSchema(checkNamespaceAvailabilitySchema), wrap(checkNamespaceAvailabilityHandler));
+router.patch('/org', validateSchema(businessFormDataSchema), wrap(updateOrgHandler));
 
 
 export default router;

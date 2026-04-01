@@ -24,6 +24,7 @@ export default async function setSessionCookieHandler(req: Request, res: Respons
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             ...(process.env.NODE_ENV === "production" && { domain: ".pixelsetu.com" }),
             maxAge: 60 * 24 * 60 * 60 * 1000, // 60 days
+            path: "/",
         });
 
         logger.info("Session cookie set successfully", { sessionId });

@@ -4,6 +4,7 @@ import { HttpError } from "../error/http.error.js";
 import { APP_EVENTS, appEventEmitter } from "../event/event.js";
 import { OrgInviteEvent } from "../event/event.type.js";
 import { orgRepo } from "../repositories/org.repository.js";
+import { userRepo } from "../repositories/user.repository.js";
 import { Org, OrgRole } from "../types/entity.type.js";
 import { OrgInviteTokenClaims } from "../types/other.type.js";
 import { context } from "../utils/context.js";
@@ -100,10 +101,15 @@ class OrgService {
         const userId = context.get("userId");
         const email = context.get("email");
         const activeOrgId = context.get("activeOrgId");
+
         const isMember = await orgRepo.checkMembership(activeOrgId, userId);
 
         if(!isMember){
             throw new HttpError("You are not a member of this organization", 403);
+        }
+
+        if(isMember.role === "owner"){
+            throw new HttpError("Organization owners cannot leave the organization. Please transfer ownership or delete the organization.", 403);
         }
 
         await orgRepo.removeMemberFromOrg(activeOrgId, userId);
@@ -125,7 +131,12 @@ class OrgService {
 
     }
 
-    async removeMemberFromOrg(userId: string){
+    async removeMemberFromOrg(userId?: string){
+
+        if(!userId){
+            throw new HttpError("User ID is required to remove a member from the organization", 400);
+        }
+
         const activeRole = context.get("activeRole");
         const activeOrgId = context.get("activeOrgId");
 
@@ -134,12 +145,18 @@ class OrgService {
         }
 
         const isMember = await orgRepo.checkMembership(activeOrgId, userId);
-        
         if(!isMember){
             throw new HttpError("User is not a member of the organization", 404);
         }
+
+        const useDetails = await userRepo.findById(userId);
+
+        if(!useDetails){
+            throw new HttpError("User not found", 404);
+        }
+
         await orgRepo.removeMemberFromOrg(activeOrgId, userId);
-        await sessionManager.deleteAllActiveSessionOfUser(userId);
+        await sessionManager.deleteAllActiveSessionOfUser(useDetails?.email);
     }
 }
 

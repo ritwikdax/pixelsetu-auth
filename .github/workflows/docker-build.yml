@@ -10,8 +10,8 @@ on:
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  GCP_REGION: us-central1
-  IMAGE_NAME: photon-backend
+  GCP_REGION: ${{ secrets.GCP_REGION }}
+  IMAGE_NAME: pixelsetu-auth-svc
 
 jobs:
   build-and-push:
@@ -35,26 +35,26 @@ jobs:
 
       - name: Configure Docker to use gcloud as credential helper
         run: |
-          gcloud auth configure-docker gcr.io
+          gcloud auth configure-docker pixelsetu-auth
 
       - name: Build Docker image
         run: |
-          docker build -t gcr.io/$PROJECT_ID/$IMAGE_NAME:$GITHUB_SHA \
-                       -t gcr.io/$PROJECT_ID/$IMAGE_NAME:latest .
+          docker build -t pixelsetu-auth/$PROJECT_ID/$IMAGE_NAME:$GITHUB_SHA \
+                       -t pixelsetu-auth/$PROJECT_ID/$IMAGE_NAME:latest .
 
       - name: Push Docker image to GCR
         run: |
-          docker push gcr.io/$PROJECT_ID/$IMAGE_NAME:$GITHUB_SHA
-          docker push gcr.io/$PROJECT_ID/$IMAGE_NAME:latest
+          docker push pixelsetu-auth/$PROJECT_ID/$IMAGE_NAME:$GITHUB_SHA
+          docker push pixelsetu-auth/$PROJECT_ID/$IMAGE_NAME:latest
 
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy ${{ secrets.GCP_CLOUD_RUN_SERVICE_NAME }} \
-            --image gcr.io/$PROJECT_ID/$IMAGE_NAME:latest \
+            --image pixelsetu-auth/$PROJECT_ID/$IMAGE_NAME:latest \
             --region ${{ secrets.GCP_REGION }} \
             --platform managed
 
       - name: Output image details
         run: |
-          echo "Image pushed to: gcr.io/$PROJECT_ID/$IMAGE_NAME:$GITHUB_SHA"
-          echo "Latest tag: gcr.io/$PROJECT_ID/$IMAGE_NAME:latest"
+          echo "Image pushed to: pixelsetu-auth/$PROJECT_ID/$IMAGE_NAME:$GITHUB_SHA"
+          echo "Latest tag: pixelsetu-auth/$PROJECT_ID/$IMAGE_NAME:latest"
