@@ -1,4 +1,4 @@
-name: Build and Push to GCP Container Registry
+name: Build and Push to GCP Artifact Registry
 
 on:
   push:
@@ -12,6 +12,7 @@ env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GCP_REGION: ${{ secrets.GCP_REGION }}
   IMAGE_NAME: pixelsetu-auth-svc
+  REPO_NAME: pixelsetu-auth   # 🔥 create this once in Artifact Registry
 
 jobs:
   build-and-push:
@@ -19,42 +20,52 @@ jobs:
 
     permissions:
       contents: read
-      id-token: write
+      id-token: write   # ✅ needed for secure auth (OIDC optional)
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 🔐 Authenticate to GCP
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
+      # ☁️ Setup gcloud
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Configure Docker to use gcloud as credential helper
+      # 🐳 Configure Docker for Artifact Registry
+      - name: Configure Docker auth
         run: |
-          gcloud auth configure-docker pixelsetu-auth
+          gcloud auth configure-docker $GCP_REGION-docker.pkg.dev
 
+      # 🏗️ Build Docker image
       - name: Build Docker image
         run: |
-          docker build -t pixelsetu-auth/$PROJECT_ID/$IMAGE_NAME:$GITHUB_SHA \
-                       -t pixelsetu-auth/$PROJECT_ID/$IMAGE_NAME:latest .
+          docker build \
+            -t $GCP_REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:$GITHUB_SHA \
+            -t $GCP_REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:latest \
+            .
 
-      - name: Push Docker image to GCR
+      # 🚀 Push image
+      - name: Push Docker image
         run: |
-          docker push pixelsetu-auth/$PROJECT_ID/$IMAGE_NAME:$GITHUB_SHA
-          docker push pixelsetu-auth/$PROJECT_ID/$IMAGE_NAME:latest
+          docker push $GCP_REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:$GITHUB_SHA
+          docker push $GCP_REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:latest
 
+      # ☁️ Deploy to Cloud Run
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy ${{ secrets.GCP_CLOUD_RUN_SERVICE_NAME }} \
-            --image pixelsetu-auth/$PROJECT_ID/$IMAGE_NAME:latest \
-            --region ${{ secrets.GCP_REGION }} \
-            --platform managed
+            --image $GCP_REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:latest \
+            --region $GCP_REGION \
+            --platform managed \
+            --allow-unauthenticated
 
+      # 📦 Output
       - name: Output image details
         run: |
-          echo "Image pushed to: pixelsetu-auth/$PROJECT_ID/$IMAGE_NAME:$GITHUB_SHA"
-          echo "Latest tag: pixelsetu-auth/$PROJECT_ID/$IMAGE_NAME:latest"
+          echo "Image pushed:"
+          echo "$GCP_REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:$GITHUB_SHA"
