@@ -51,7 +51,7 @@ export interface GoogleTokenClaims {
     family_name: string;
     email_verified: boolean;
     picture: string;
-    sub: string; //This is the unique identifier for the user in Google
+    sub: string; //This is the unique identifier for the user in Google login
 }
 
 export interface OrgInviteTokenClaims {
