@@ -25,7 +25,13 @@ app.use(helmet());
 app.use(
   cors({
     origin: process.env.NODE_ENV === "production"
-      ? ["https://pixelsetu.com", "https://www.pixelsetu.com"]
+      ? (origin, callback) => {
+          if (!origin || origin.match(/^https:\/\/([a-zA-Z0-9-]+\.)?pixelsetu\.com$/)) {
+            callback(null, true);
+          } else {
+            callback(new Error("Not allowed by CORS"));
+          }
+        }
       : ["http://localhost:3000"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
