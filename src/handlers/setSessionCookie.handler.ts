@@ -21,7 +21,7 @@ export default async function setSessionCookieHandler(req: Request, res: Respons
         res.cookie("session_id", sessionId, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            //sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            sameSite: "none",
             ...(process.env.NODE_ENV === "production" && { domain: ".pixelsetu.com" }),
             maxAge: 60 * 24 * 60 * 60 * 1000, // 60 days
             path: "/",
