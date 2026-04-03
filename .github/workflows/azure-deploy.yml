@@ -1,0 +1,65 @@
+name: Build and Deploy to Azure Container Apps
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+  AZURE_CONTAINER_APP: ${{ secrets.AZURE_CONTAINER_APP_NAME }}
+  ACR_NAME: ${{ secrets.ACR_NAME }} # e.g. pixelsetuacr
+  IMAGE_NAME: pixelsetu-auth-svc
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write   # required for OIDC login
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 🔐 Login to Azure (OIDC recommended)
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # 🐳 Login to ACR
+      - name: Login to Azure Container Registry
+        run: |
+          az acr login --name $ACR_NAME
+
+      # 🏗️ Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t $ACR_NAME.azurecr.io/$IMAGE_NAME:${{ github.sha }} \
+            -t $ACR_NAME.azurecr.io/$IMAGE_NAME:latest \
+            .
+
+      # 🚀 Push image to ACR
+      - name: Push Docker image
+        run: |
+          docker push $ACR_NAME.azurecr.io/$IMAGE_NAME:${{ github.sha }}
+          docker push $ACR_NAME.azurecr.io/$IMAGE_NAME:latest
+
+      # ☁️ Deploy to Azure Container Apps
+      - name: Deploy to Azure Container Apps
+        run: |
+          az containerapp update \
+            --name $AZURE_CONTAINER_APP \
+            --resource-group $AZURE_RESOURCE_GROUP \
+            --image $ACR_NAME.azurecr.io/$IMAGE_NAME:latest
+
+      # 📦 Output
+      - name: Output image details
+        run: |
+          echo "Image pushed:"
+          echo "$ACR_NAME.azurecr.io/$IMAGE_NAME:${{ github.sha }}"
