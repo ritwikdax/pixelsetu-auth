@@ -76,7 +76,7 @@ jobs:
             --target-port 3000 \
             --ingress external \
             --registry-server $ACR_NAME.azurecr.io \
-            --query properties.configuration.ingress.fqdn
+            --query properties.configuration.ingress.fqdn \
             --registry-identity system
 
       # 🔄 Update Container App (if exists)
