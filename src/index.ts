@@ -48,7 +48,7 @@ app.use(wrap(contextMiddleware));
 //==========PUBLIC ROUTES (NO AUTH) ==========
 //Todo - add a basic cred login endpoint
 
-app.get("/api/health", healthCheckHandler);
+app.get("/health", healthCheckHandler);
 app.get('/api/auth/callback/google', wrap(googleLoginHandler));
 app.post('/api/auth/set-cookie', wrap(setSessionCookieHandler));
 app.get('/api/accept-invite', wrap(acceptInviteHandler));
@@ -116,8 +116,8 @@ async function preStartSetup() {
 async function startServer() {
   try {
     await preStartSetup();
-    const PORT = process.env.PORT || 3001;
-    app.listen(PORT, () => {
+    const PORT = process.env.PORT ? Number(process.env.PORT) : 8080;
+    app.listen(PORT, '0.0.0.0', () => {
       logger.info(`🚀 Server running on http://localhost:${PORT}`);
     });
 
