@@ -87,7 +87,7 @@ jobs:
             --name $AZURE_CONTAINER_APP \
             --resource-group $AZURE_RESOURCE_GROUP \
             --image $ACR_NAME.azurecr.io/$IMAGE_NAME:latest \
-            --revision-suffix ${{ github.sha }}
+            --revision-suffix ${GITHUB_SHA::7}
 
       # 📦 Output
       - name: Output image details
