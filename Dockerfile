@@ -33,10 +33,10 @@ COPY --from=builder /app/dist ./dist
 ENV NODE_ENV=production
 
 # Expose the application port
-EXPOSE 8080
+EXPOSE 3000
 
 # Set default PORT environment variable for Cloud Run
-ENV PORT=8080
+ENV PORT=3000
 
 # Start the application
 CMD ["npm", "start"]

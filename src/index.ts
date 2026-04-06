@@ -116,7 +116,7 @@ async function preStartSetup() {
 async function startServer() {
   try {
     await preStartSetup();
-    const PORT = process.env.PORT ? Number(process.env.PORT) : 8080;
+    const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
     app.listen(PORT, '0.0.0.0', () => {
       logger.info(`🚀 Server running on http://localhost:${PORT}`);
     });

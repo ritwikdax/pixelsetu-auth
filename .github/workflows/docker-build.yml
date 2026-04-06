@@ -1,71 +1,49 @@
-# name: Build and Push to GCP Artifact Registry
+name: 🚀 Deploy to Azure Container Apps
 
-# on:
-#   push:
-#     branches:
-#       - main
-#   pull_request:
-#     branches:
-#       - main
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
 
-# env:
-#   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-#   GCP_REGION: ${{ secrets.GCP_REGION }}
-#   IMAGE_NAME: pixelsetu-auth-svc
-#   REPO_NAME: pixelsetu-auth   # 🔥 create this once in Artifact Registry
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-# jobs:
-#   build-and-push:
-#     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
-#     permissions:
-#       contents: read
-#       id-token: write   # ✅ needed for secure auth (OIDC optional)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.PIXELSETUTEST_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.PIXELSETUTEST_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.PIXELSETUTEST_AZURE_SUBSCRIPTION_ID }}
 
-#       # 🔐 Authenticate to GCP
-#       - name: Authenticate to Google Cloud
-#         uses: google-github-actions/auth@v2
-#         with:
-#           credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - name: Set short SHA
+        run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
 
-#       # ☁️ Setup gcloud
-#       - name: Set up Cloud SDK
-#         uses: google-github-actions/setup-gcloud@v2
+      # ✅ FIXED LOGIN
+      - name: Login to ACR
+        run: az acr login --name pixelsetuacr
 
-#       # 🐳 Configure Docker for Artifact Registry
-#       - name: Configure Docker auth
-#         run: |
-#           gcloud auth configure-docker $GCP_REGION-docker.pkg.dev
-
-#       # 🏗️ Build Docker image
-#       - name: Build Docker image
-#         run: |
-#           docker build \
-#             -t $GCP_REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:$GITHUB_SHA \
-#             -t $GCP_REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:latest \
-#             .
-
-#       # 🚀 Push image
-#       - name: Push Docker image
-#         run: |
-#           docker push $GCP_REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:$GITHUB_SHA
-#           docker push $GCP_REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:latest
-
-#       # ☁️ Deploy to Cloud Run
-#       - name: Deploy to Cloud Run
-#         run: |
-#           gcloud run deploy ${{ secrets.GCP_CLOUD_RUN_SERVICE_NAME }} \
-#             --image $GCP_REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:latest \
-#             --region $GCP_REGION \
-#             --platform managed \
-#             --allow-unauthenticated
-
-#       # 📦 Output
-#       - name: Output image details
-#         run: |
-#           echo "Image pushed:"
-#           echo "$GCP_REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:$GITHUB_SHA"
+      - name: Build Image
+        run: |
+          docker build \
+            -t pixelsetuacr.azurecr.io/pixelsetu-auth-svc:${{ env.SHORT_SHA }} \
+            -t pixelsetuacr.azurecr.io/pixelsetu-auth-svc:latest \
+            .
+      - name: Push Image
+        run: |
+          docker push pixelsetuacr.azurecr.io/pixelsetu-auth-svc:${{ env.SHORT_SHA }}
+          docker push pixelsetuacr.azurecr.io/pixelsetu-auth-svc:latest
+      - name: Deploy
+        run: |
+          az containerapp update \
+            --name pixelsetu-auth-svc \
+            --resource-group Pixelsetu \
+            --image pixelsetuacr.azurecr.io/pixelsetu-auth-svc:${{ env.SHORT_SHA }}
