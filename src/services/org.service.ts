@@ -15,6 +15,14 @@ import { sessionManager } from "./session.servcie.js";
 
 class OrgService {
 
+    async getOrgDetailsByNamespace(namespace: string){
+        const orgDetails = await orgRepo.getOrgDetailsByNamespace(namespace);
+        if(!orgDetails){
+            throw new HttpError("Organization not found", 404);
+        }
+        return orgDetails;
+    }
+
     async checkNamespaceAvailability(namespace: string) {
         return await orgRepo.checkNamespaceAvailability(namespace);
     }

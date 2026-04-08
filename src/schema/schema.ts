@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const inviteUserToOrgSchema = z.object({
-  email: z.string().email({message: "Invalid email address"}),
-  role: z.enum(["admin", "editor", "viewer"], {message: "Must be a valid role"})
+  email: z.string().email({ message: "Invalid email address" }),
+  role: z.enum(["admin", "editor", "viewer"], { message: "Must be a valid role" })
 }).strict();
 
 export const sessionLogoutSchema = z.object({
@@ -42,5 +42,13 @@ export const businessFormDataSchema = z.object({
   instagramUrl: z.url({ message: "Invalid URL" }).or(z.literal("")).optional(),
   youtubeUrl: z.url({ message: "Invalid URL" }).or(z.literal("")).optional(),
   googleMapUrl: z.url({ message: "Invalid URL" }).or(z.literal("")).optional(),
+
+  featuredImages: z.array(z.object({
+    id: z.string(),
+    value: z.url({ message: "Invalid URL" })
+  })).max(8).optional(),
+  platform: z.enum(["computer", "photography", "other"], { message: "Platform must be one of: computer, photography, other" }).optional()
+
+
 }).strict();
 

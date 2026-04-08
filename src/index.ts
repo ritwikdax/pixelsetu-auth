@@ -17,6 +17,7 @@ import { contextMiddleware } from "./mw/context.middleware.js";
 import { wrap } from "./utils/wrapper.js";
 import helmet from "helmet";
 import { COLLECTIONS } from "./const.js";
+import getBusinessDetailsPublicHandler from "./handlers/getBusinessDetailsPublic.js";
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.get("/health", healthCheckHandler);
 app.get('/api/auth/callback/google', wrap(googleLoginHandler));
 app.post('/api/auth/set-cookie', wrap(setSessionCookieHandler));
 app.get('/api/accept-invite', wrap(acceptInviteHandler));
+app.get('/business/:namespace', wrap(getBusinessDetailsPublicHandler));
 
 
 //==========AUTHENTICATED ROUTES (AUTH REQUIRED) ==========

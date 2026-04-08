@@ -5,6 +5,11 @@ import { Org, OrgRole } from "../types/entity.type.js";
 
 class OrgRepository {
 
+    async getOrgDetailsByNamespace(namespace: string) {
+        const db = await getDb();
+        return await db.collection<Org>(COLLECTIONS.ORGS).findOne({ namespace }, { projection: { _id: 0, id: 0, ownerEmail: 0, ownerId: 0, createdAt: 0, updatedAt: 0 } });
+    }
+
 
     async updateOrgDetails(updatedData: Partial<Org>, orgId: string) {
         const db = await getDb();
