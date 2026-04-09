@@ -42,13 +42,11 @@ export const businessFormDataSchema = z.object({
   instagramUrl: z.url({ message: "Invalid URL" }).or(z.literal("")).optional(),
   youtubeUrl: z.url({ message: "Invalid URL" }).or(z.literal("")).optional(),
   googleMapUrl: z.url({ message: "Invalid URL" }).or(z.literal("")).optional(),
-
+  coverImageUrl: z.url({message: "Invalid URL"}),
   featuredImages: z.array(z.object({
     id: z.string(),
     value: z.url({ message: "Invalid URL" })
   })).max(8).optional(),
   platform: z.enum(["computer", "photography", "other"], { message: "Platform must be one of: computer, photography, other" }).optional()
-
-
 }).strict();
 
