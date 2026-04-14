@@ -2,7 +2,7 @@ name: 🚀 Deploy to Azure Container Apps
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -12,10 +12,33 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      packages: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set short SHA
+        run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Image
+        run: |
+          docker build \
+            -t ghcr.io/${{ github.repository_owner }}/pixelsetu-auth-svc:${{ env.SHORT_SHA }} \
+            -t ghcr.io/${{ github.repository_owner }}/pixelsetu-auth-svc:latest \
+            .
+
+      - name: Push Image
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/pixelsetu-auth-svc:${{ env.SHORT_SHA }}
+          docker push ghcr.io/${{ github.repository_owner }}/pixelsetu-auth-svc:latest
 
       - name: Azure Login
         uses: azure/login@v2
@@ -24,26 +47,18 @@ jobs:
           tenant-id: ${{ secrets.PIXELSETUAUTH_AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.PIXELSETUAUTH_AZURE_SUBSCRIPTION_ID }}
 
-      - name: Set short SHA
-        run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
-
-      # ✅ FIXED LOGIN
-      - name: Login to ACR
-        run: az acr login --name pixelsetuacr
-
-      - name: Build Image
+      - name: Set Registry Credentials
         run: |
-          docker build \
-            -t pixelsetuacr.azurecr.io/pixelsetu-auth-svc:${{ env.SHORT_SHA }} \
-            -t pixelsetuacr.azurecr.io/pixelsetu-auth-svc:latest \
-            .
-      - name: Push Image
-        run: |
-          docker push pixelsetuacr.azurecr.io/pixelsetu-auth-svc:${{ env.SHORT_SHA }}
-          docker push pixelsetuacr.azurecr.io/pixelsetu-auth-svc:latest
+          az containerapp registry set \
+            --name pixelsetu-auth-svc \
+            --resource-group Pixelsetu \
+            --server ghcr.io \
+            --username ${{ github.repository_owner }} \
+            --password ${{ secrets.GHCR_PAT }}
+
       - name: Deploy
         run: |
           az containerapp update \
             --name pixelsetu-auth-svc \
             --resource-group Pixelsetu \
-            --image pixelsetuacr.azurecr.io/pixelsetu-auth-svc:${{ env.SHORT_SHA }}
+            --image ghcr.io/${{ github.repository_owner }}/pixelsetu-auth-svc:${{ env.SHORT_SHA }}
